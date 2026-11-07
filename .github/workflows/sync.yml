@@ -1,0 +1,26 @@
+name: Garmin Sync
+on:
+  schedule:
+    - cron: "17 6,12,19 * * *"   # 07:17, 13:17, 20:17 Uhr (deutsche Winterzeit)
+  workflow_dispatch:              # manuell starten per "Run workflow"
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install garmin-connect-personal-api-python cryptography
+      - run: python garmin_sync.py
+        env:
+          GARMIN_KEY: ${{ secrets.GARMIN_KEY }}
+          SYNC_PASS: ${{ secrets.SYNC_PASS }}
+      - run: |
+          git config user.name "garmin-bot"
+          git config user.email "garmin-bot@users.noreply.github.com"
+          git add garmin.enc.json
+          git commit -m "Garmin sync" || exit 0
+          git push
